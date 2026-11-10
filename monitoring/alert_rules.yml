@@ -1,0 +1,59 @@
+groups:
+  - name: payops-availability
+    rules:
+      - alert: PayOpsServiceDown
+        expr: probe_success{job="blackbox-ready"} == 0
+        for: 15s
+        labels: {severity: critical}
+        annotations:
+          summary: "PayOps API readiness probe failing"
+          runbook: "docs/RUNBOOK.md#service-down"
+
+      - alert: PayOpsRedisDown
+        expr: payops_redis_up == 0
+        for: 10s
+        labels: {severity: critical}
+        annotations:
+          summary: "PayOps cannot reach Redis (authorizations fail closed)"
+          runbook: "docs/RUNBOOK.md#service-down"
+
+  - name: payops-slo
+    rules:
+      - alert: PayOpsHighErrorRate
+        expr: |
+          sum(rate(payops_requests_total{endpoint="/authorize",status=~"5.."}[1m]))
+            / clamp_min(sum(rate(payops_requests_total{endpoint="/authorize"}[1m])), 0.001) > 0.05
+        for: 30s
+        labels: {severity: critical}
+        annotations:
+          summary: "More than 5% of /authorize requests are failing (SLO: 99.5% availability)"
+          runbook: "docs/RUNBOOK.md#service-down"
+
+      - alert: PayOpsHighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(payops_request_duration_seconds_bucket{endpoint="/authorize"}[1m]))) > 0.3
+        for: 30s
+        labels: {severity: warning}
+        annotations:
+          summary: "p95 /authorize latency above 300 ms (latency SLO breached)"
+          runbook: "docs/RUNBOOK.md#high-latency"
+
+  - name: payops-host
+    rules:
+      - alert: HostDiskAlmostFull
+        expr: |
+          node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"} < 0.15
+        for: 1m
+        labels: {severity: warning}
+        annotations:
+          summary: "A filesystem has less than 15% free space"
+          runbook: "docs/RUNBOOK.md#disk-full"
+
+      - alert: HostHighCPU
+        expr: 100 - avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100 > 85
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "CPU above 85% for 5 minutes"

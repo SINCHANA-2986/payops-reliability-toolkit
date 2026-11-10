@@ -1,0 +1,13 @@
+route:
+  receiver: alert-sink
+  group_by: [alertname]
+  group_wait: 5s
+  group_interval: 30s
+  repeat_interval: 1h
+
+receivers:
+  - name: alert-sink
+    webhook_configs:
+      - url: http://alert-sink:5001/alerts
+        send_resolved: true
+  # To also notify Slack, add a slack_configs entry here with your webhook URL.

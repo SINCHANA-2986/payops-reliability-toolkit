@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PayOps control room</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark" id="mark" data-state="idle" aria-hidden="true"></span>PayOps control room</div>
+    <div class="chips">
+      <span class="chip"><span class="dot" id="redis-dot" data-state="idle"></span><span id="redis-text">Redis unknown</span></span>
+      <span class="chip" id="release-chip">Release unknown</span>
+      <time id="clock" class="clock"></time>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="status-line">
+      <h1 id="status-line" class="status" aria-live="polite">Connecting to the API</h1>
+      <p id="status-sub" class="sub">Waiting for the first reading.</p>
+
+      <div class="tape">
+        <canvas id="tape" role="img" aria-label="Live tape of authorization requests from the last 60 seconds"></canvas>
+        <div id="tape-empty" class="tape-empty">
+          <p>No authorizations yet. Each request you send shows up here as a tick, taller when it is slower.</p>
+          <button class="btn" id="tape-start" type="button">Start test traffic</button>
+        </div>
+      </div>
+      <div class="legend" aria-label="Tape legend">
+        <span><i class="sw" style="background:var(--ok)"></i>Approved</span>
+        <span><i class="sw" style="background:var(--decline)"></i>Declined or limited</span>
+        <span><i class="sw" style="background:var(--err)"></i>Failed</span>
+        <span class="legend-note" id="tape-summary">Last 60 seconds: no requests</span>
+      </div>
+    </section>
+
+    <section class="vitals" aria-label="Key figures">
+      <div class="fig"><b id="fig-avail">&ndash;</b><span>Successful requests since the API started</span></div>
+      <div class="fig"><b id="fig-p95">&ndash;</b><span>Slowest 5% of requests take longer than this</span><small>Target 300 ms</small></div>
+      <div class="fig"><b id="fig-rps">&ndash;</b><span>Requests per second</span></div>
+      <div class="fig"><b id="fig-err">&ndash;</b><span>Failing right now</span><small>Alert above 5%</small></div>
+      <div class="fig"><b id="fig-budget">&ndash;</b><span>Error budget left</span><small>Goal 99.5% successful</small></div>
+    </section>
+
+    <section class="charts" aria-label="Trends over the last two minutes">
+      <figure>
+        <figcaption>Response time, slowest 5%</figcaption>
+        <svg id="ch-p95" viewBox="0 0 360 130" role="img" aria-label="Response time trend"></svg>
+      </figure>
+      <figure>
+        <figcaption>Requests per second by outcome</figcaption>
+        <svg id="ch-rps" viewBox="0 0 360 130" role="img" aria-label="Request rate trend"></svg>
+      </figure>
+      <figure>
+        <figcaption>Share of requests failing</figcaption>
+        <svg id="ch-err" viewBox="0 0 360 130" role="img" aria-label="Error rate trend"></svg>
+      </figure>
+    </section>
+
+    <section class="controls" aria-label="Controls">
+      <div class="ctl">
+        <h2>Send test traffic</h2>
+        <p class="hint">Sends authorizations from this browser to the API. When responses get slow, the page sends fewer per second instead of piling up requests.</p>
+        <label for="rps">Rate: <output id="rps-out">15</output> per second</label>
+        <input id="rps" type="range" min="1" max="40" value="15">
+        <div class="row">
+          <button class="btn" id="traffic-toggle" type="button">Start test traffic</button>
+        </div>
+      </div>
+
+      <div class="ctl">
+        <h2>Break something</h2>
+        <p class="hint" id="fault-hint">Slow down or fail the risk scorer, then watch the tape, the figures and the event log react.</p>
+        <label for="delay">Extra delay: <output id="delay-out">0</output> ms</label>
+        <input id="delay" type="range" min="0" max="1500" step="50" value="0">
+        <label class="check"><input id="fail" type="checkbox"> Make the risk scorer fail</label>
+        <div class="row">
+          <button class="btn" id="fault-apply" type="button">Apply to risk scorer</button>
+          <button class="btn secondary" id="fault-clear" type="button">Restore normal</button>
+        </div>
+        <p class="hint" id="fault-note" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="lower">
+      <div>
+        <h2>Event log</h2>
+        <ol id="events" class="events" aria-live="polite">
+          <li class="empty">Nothing has gone wrong yet. Slow the risk scorer to see an event appear here.</li>
+        </ol>
+      </div>
+      <div>
+        <h2>Failure drills</h2>
+        <div id="drills"><p class="empty">Loading drill results.</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

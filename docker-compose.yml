@@ -1,0 +1,72 @@
+# Full monitoring stack. Start with: docker compose up -d --build
+# Grafana http://localhost:3000 (admin / admin), Prometheus http://localhost:9090,
+# Alertmanager http://localhost:9093, API http://localhost:8099
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "no"]
+    volumes: [redis-data:/data]
+    restart: unless-stopped
+
+  payops-api:
+    build: .
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      APP_VERSION: compose
+      ENABLE_FAULT_INJECTION: "1"   # drills only; keep "0" anywhere real
+    ports: ["8099:8099"]
+    depends_on: [redis]
+    restart: unless-stopped
+
+  loadgen:
+    build: .
+    command: ["python", "scripts/load_gen.py", "--url", "http://payops-api:8099", "--rps", "20", "--duration", "86400"]
+    depends_on: [payops-api]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    ports: ["9090:9090"]
+    depends_on: [payops-api, alertmanager, node-exporter, blackbox]
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    volumes: ["./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+    ports: ["9093:9093"]
+    depends_on: [alert-sink]
+    restart: unless-stopped
+
+  alert-sink:   # prints every alert Alertmanager sends, so alerts are visible without Slack/email
+    image: python:3.12-slim
+    command: ["python", "/tools/alert_sink.py"]
+    volumes: ["./tools:/tools:ro"]
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports: ["9100:9100"]
+    restart: unless-stopped
+
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    volumes: ["./monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/payops.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+volumes:
+  redis-data:

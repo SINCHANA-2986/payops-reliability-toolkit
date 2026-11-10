@@ -1,0 +1,6 @@
+drill,status,description,detect_s,detected_by,recover_s,failed_req,total_req,error_rate_pct,final_state
+redis_outage,OK,Redis process killed (dependency outage),0.06,http_ready;tcp_redis;canary_authorize,0.22,5,8,62.5,OK
+port_blocked,OK,Firewall rule drops TCP/8099 (network path blocked),2.04,tcp_api;http_ready;canary_authorize,0.21,4,12,33.3,OK
+disk_full,OK,Data filesystem filled to ~95% of 64 MB,0.09,disk:/tmp/payops-drill/data,0.21,0,8,0.0,OK
+high_latency,OK,Downstream risk scorer slowed by 800 ms,0.86,canary_authorize,0.21,0,4,0.0,OK
+bad_deploy,OK,Release v2-bad deployed with failing readiness (auto-rollback expected),0.06,tcp_api;http_ready;canary_authorize,9.08,76,184,41.3,OK

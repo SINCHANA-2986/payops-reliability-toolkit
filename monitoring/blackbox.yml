@@ -1,0 +1,8 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 3s
+    http:
+      method: GET
+      valid_status_codes: []   # any 2xx counts as success
+      preferred_ip_protocol: ip4

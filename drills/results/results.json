@@ -1,0 +1,86 @@
+[
+  {
+    "drill": "redis_outage",
+    "description": "Redis process killed (dependency outage)",
+    "impact_note": "API fails closed with HTTP 503",
+    "status": "OK",
+    "detect_s": 0.06,
+    "detected_by": [
+      "http_ready",
+      "tcp_redis",
+      "canary_authorize"
+    ],
+    "recover_s": 0.22,
+    "failed_req": 5,
+    "total_req": 8,
+    "error_rate_pct": 62.5,
+    "final_state": "OK"
+  },
+  {
+    "drill": "port_blocked",
+    "description": "Firewall rule drops TCP/8099 (network path blocked)",
+    "impact_note": "Clients time out; no TCP response",
+    "status": "OK",
+    "detect_s": 2.04,
+    "detected_by": [
+      "tcp_api",
+      "http_ready",
+      "canary_authorize"
+    ],
+    "recover_s": 0.21,
+    "failed_req": 4,
+    "total_req": 12,
+    "error_rate_pct": 33.3,
+    "final_state": "OK"
+  },
+  {
+    "drill": "disk_full",
+    "description": "Data filesystem filled to ~95% of 64 MB",
+    "impact_note": "Service still answers; risk is Redis snapshot failures",
+    "status": "OK",
+    "detect_s": 0.09,
+    "detected_by": [
+      "disk:/tmp/payops-drill/data"
+    ],
+    "recover_s": 0.21,
+    "failed_req": 0,
+    "total_req": 8,
+    "error_rate_pct": 0.0,
+    "final_state": "OK"
+  },
+  {
+    "drill": "high_latency",
+    "description": "Downstream risk scorer slowed by 800 ms",
+    "impact_note": "Requests succeed but exceed latency SLO",
+    "status": "OK",
+    "detect_s": 0.86,
+    "detected_by": [
+      "canary_authorize"
+    ],
+    "recover_s": 0.21,
+    "failed_req": 0,
+    "total_req": 4,
+    "error_rate_pct": 0.0,
+    "final_state": "OK"
+  },
+  {
+    "drill": "bad_deploy",
+    "description": "Release v2-bad deployed with failing readiness (auto-rollback expected)",
+    "impact_note": "Brief outage while the bad release starts and is rolled back",
+    "status": "OK",
+    "deploy_exit_code": 1,
+    "rolled_back": true,
+    "running_version_after": "v1",
+    "detect_s": 0.06,
+    "detected_by": [
+      "tcp_api",
+      "http_ready",
+      "canary_authorize"
+    ],
+    "recover_s": 9.08,
+    "failed_req": 76,
+    "total_req": 184,
+    "error_rate_pct": 41.3,
+    "final_state": "OK"
+  }
+]
