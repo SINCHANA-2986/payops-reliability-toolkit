@@ -36,8 +36,6 @@ python -m pytest -q
 
 That runs 17 tests. The API ones talk to a real Redis, not a mock.
 
-## Dashboard
-![Dashboard during a Redis outage](docs/screenshots/dashboard-redis-down.png)
 
 To see the dashboard:
 
